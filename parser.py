@@ -1,6 +1,8 @@
 import os
 import json
 import matplotlib.pyplot as plt
+import numpy as np
+import copy
 
 
 class ResultSchema:
@@ -31,18 +33,102 @@ class Result:
 
 
 class Plotter:
-    def __init__(self, files=[]):
-        self.files = files
+    def __init__(self, file_blobs=[]):
+        self.file_blobs = file_blobs
         self.results = []
+        self.label_mapper = {
+            'messageSize': 'messageSize',
+            'aggregatedEndToEndLatencyAvg': 'aggregatedEndToEndLatencyAvg'
+        }
 
     def fetch_results(self):
-        for file in self.files:
-            self.results.append(Result(file))
+        for file_blob in self.file_blobs:
+            result_blob = []
+            for file in file_blob:
+                result_blob.append(Result(file))
+            self.results.append(result_blob)
 
-    def plot(self, x_label, y_label, title=''):
+    def generate_title(self, labels):
+        return ' vs '.join(labels)
+
+
+    def stacked_bar_graph(self, x_label, y_label, title=""):
+        x_vals = []
+        y_vals = [[] for i in range(len(self.file_blobs[0]))]
+        bars_count = len(self.file_blobs[0])
+        for result in self.results:
+            x_vals.append(result[0].result_dict.get(x_label))
+            for i in range(bars_count):
+                y_vals[i].append(result[i].result_dict.get(y_label))
+
+        x = np.arange(len(x_vals))
+        width = 0.1
+        fig, ax = plt.subplots()
+        for i in range(bars_count):
+            rect = ax.bar(x + width*i - width*(bars_count-1)/2, y_vals[i], width, label="")
+            ax.bar_label(rect, padding=3)
+
+        ax.set_ylabel(self.label_mapper.get(y_label, y_label))
+        ax.set_xlabel(self.label_mapper.get(x_label, x_label))
+        if not title:
+            ax.set_title(self.generate_title([y_label, x_label]))
+        ax.set_xticks(x, x_vals)
+        ax.legend()
+
+        fig.tight_layout()
+        plt.show()
+
+    def box_plotter(self, x_label, metric="aggregatedEndToEndLatency", title=""):
+
+        box_dict_ref = {
+            'label': '',
+            'whislo': 0,
+            'q1': 0,
+            'med': 0,
+            'q3': 0,
+            'whishi': 0,
+            'fliers': []
+        }
+        blob_size = len(self.file_blobs[0])
+        if not blob_size == 1:
+            raise Exception("Sorry, box plot is not supported")
+            return
+        boxes = []
+        for file_blob in self.results:
+            for result in file_blob:
+
+                box_dict = copy.copy(box_dict_ref)
+                box_dict['label'] = result.result_dict.get(x_label)
+                box_dict['whislo'] = result.result_dict.get(metric+'25pct', 0)
+                box_dict['q1'] = result.result_dict.get(metric+'25pct', 0)
+                box_dict['med'] = result.result_dict.get(metric+'50pct', 0)
+                box_dict['q3'] = result.result_dict.get(metric+'75pct', 0)
+                box_dict['whishi'] = result.result_dict.get(metric+'Max', 0)
+            boxes.append(box_dict)
+        import pdb
+        pdb.set_trace()
+        fig, ax = plt.subplots()
+
+        ax.bxp(boxes, showfliers=False)
+
+        ax.set_ylabel(self.label_mapper.get(metric, metric))
+        ax.set_title(title)
+        plt.show()
+
+
+
+    def multi_line_plotter(self, x_label, y_label, title=""):
+        pass
+
+    def violin_plot(self, x_label, y_label, title=""):
+        pass
+
+    '''
+    def simple_plot(self, x_label, y_label, title=''):
         x_vals = []
         y_vals = []
         for result in self.results:
+
             x_vals.append(result.result_dict.get(x_label))
             y_vals.append(result.result_dict.get(x_label))
 
@@ -53,9 +139,14 @@ class Plotter:
             title = x_label + ' vs ' + y_label
         plt.title(title)
         plt.show()
+    '''
+
+
 
 if __name__ == "__main__":
-    files = ['./sample.json']
-    plotter = Plotter(files=files)
+    file_blobs = [['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json'], ['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json']]
+    file_blobs = [['./sample.json'], ['./sample.json']]
+
+    plotter = Plotter(file_blobs=file_blobs)
     plotter.fetch_results()
-    plotter.plot('messageSize', 'aggregatedEndToEndLatencyAvg')
+    plotter.box_plotter('messageSize', 'aggregatedEndToEndLatency')
