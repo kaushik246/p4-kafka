@@ -33,7 +33,6 @@ class Result:
     def get_metrics(self):
         pass
 
-
 class Plotter:
     def __init__(self, dir_path, file_blobs=[]):
         self.file_blobs = file_blobs
@@ -66,6 +65,7 @@ class Plotter:
 
         x = np.arange(len(x_vals))
         width = 0.1
+        plt.figure()
         fig, ax = plt.subplots()
         for i in range(bars_count):
             rect = ax.bar(x + width*i - width*(bars_count-1)/2, y_vals[i], width, label="")
@@ -79,7 +79,7 @@ class Plotter:
         ax.legend()
 
         fig.tight_layout()
-        plt.savefig(title+".jpg")
+        fig.savefig(title+".jpg")
 
     def box_plotter(self, x_label, metric="aggregatedEndToEndLatency", title=""):
 
@@ -108,19 +108,22 @@ class Plotter:
                 box_dict['q3'] = result.result_dict.get(metric+'75pct', 0)
                 box_dict['whishi'] = result.result_dict.get(metric+'Max', 0)
             boxes.append(box_dict)
+        plt.figure()
         fig, ax = plt.subplots()
 
         ax.bxp(boxes, showfliers=False)
 
         ax.set_ylabel(self.label_mapper.get(metric, metric))
         ax.set_title(title)
-        plt.savefig(title+".jpg")
+        fig.savefig(title+".jpg")
 
     def util_percentile(self, pct_data):
         clean_pct_data = defaultdict(float)
         for key in pct_data:
             if ".0" in key:
                 num = int(key.split(".")[0])
+                if int(num) < 1:
+                    continue
                 clean_pct_data[num] = pct_data[key]
         return clean_pct_data
 
@@ -137,8 +140,9 @@ class Plotter:
                 clean_pct_data = self.util_percentile(pct_data)
                 for key, val in clean_pct_data.items():
                     y_vals[i][key] = val
+        plt.figure()
         for i in range(len(self.file_blobs)):
-            plt.plot(x_vals, y_vals[i], label="line "+str(i))
+            plt.plot(x_vals[1:], y_vals[i][1:], label="line "+str(i))
         plt.legend()
         plt.xlabel('Percentile')
         plt.ylabel(y_label)
@@ -146,6 +150,35 @@ class Plotter:
 
     def violin_plot(self, x_label, y_label, title=""):
         pass
+
+    def throughput_plot(self, x_label, y_label, title=""):
+        x_vals = []
+        y_vals = [[] for i in range(len(self.file_blobs[0]))]
+        bars_count = len(self.file_blobs[0])
+        for result in self.results:
+            x_vals.append(result[0].result_dict.get(x_label))
+            for i in range(bars_count):
+                import pdb
+                pdb.set_trace()
+                y_vals[i].append(np.mean(result[i].result_dict.get(y_label))*result[i].result_dict.get('messageSize'))
+        x = np.arange(len(x_vals))
+        width = 0.1
+        plt.figure()
+        fig, ax = plt.subplots()
+        for i in range(bars_count):
+            rect = ax.bar(x + width*i - width*(bars_count-1)/2, y_vals[i], width, label="")
+            ax.bar_label(rect, padding=3)
+
+        ax.set_ylabel(self.label_mapper.get(y_label, y_label))
+        ax.set_xlabel(self.label_mapper.get(x_label, x_label))
+        if not title:
+            ax.set_title(self.generate_title([y_label, x_label]))
+        ax.set_xticks(x, x_vals)
+        ax.legend()
+
+        fig.tight_layout()
+        plt.savefig(title+".jpg")
+
 
     '''
     def simple_plot(self, x_label, y_label, title=''):
