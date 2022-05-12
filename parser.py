@@ -3,6 +3,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+from collections import defaultdict
 
 
 class ResultSchema:
@@ -105,8 +106,6 @@ class Plotter:
                 box_dict['q3'] = result.result_dict.get(metric+'75pct', 0)
                 box_dict['whishi'] = result.result_dict.get(metric+'Max', 0)
             boxes.append(box_dict)
-        import pdb
-        pdb.set_trace()
         fig, ax = plt.subplots()
 
         ax.bxp(boxes, showfliers=False)
@@ -115,10 +114,33 @@ class Plotter:
         ax.set_title(title)
         plt.show()
 
+    def util_percentile(self, pct_data):
+        clean_pct_data = defaultdict(float)
+        for key in pct_data:
+            if ".0" in key:
+                num = int(key.split(".")[0])
+                clean_pct_data[num] = pct_data[key]
+        return clean_pct_data
 
-
-    def multi_line_plotter(self, x_label, y_label, title=""):
-        pass
+    def multi_line_percentile_plotter(self, y_label, title=""):
+        blob_size = len(self.file_blobs[0])
+        if not blob_size == 1:
+            raise Exception("Sorry, box plot is not supported")
+            return
+        y_vals = [[0.0 for i in range(101)] for j in range(len(self.file_blobs))]
+        x_vals  = [i for i in range(101)]
+        for i in range(len(self.file_blobs)):
+            for result in self.results[i]:
+                pct_data = result.result_dict.get(y_label)
+                clean_pct_data = self.util_percentile(pct_data)
+                for key, val in clean_pct_data.items():
+                    y_vals[i][key] = val
+        import pdb
+        pdb.set_trace()
+        for i in range(len(self.file_blobs)):
+            plt.plot(x_vals, y_vals[i], label="line "+str(i))
+        plt.legend()
+        plt.show()
 
     def violin_plot(self, x_label, y_label, title=""):
         pass
@@ -144,9 +166,9 @@ class Plotter:
 
 
 if __name__ == "__main__":
-    file_blobs = [['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json'], ['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json']]
-    file_blobs = [['./sample.json'], ['./sample.json']]
+    #file_blobs = [['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json'], ['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json']]
+    file_blobs = [['./sample.json'], ['./sample_2.json']]
 
     plotter = Plotter(file_blobs=file_blobs)
     plotter.fetch_results()
-    plotter.box_plotter('messageSize', 'aggregatedEndToEndLatency')
+    plotter.multi_line_percentile_plotter('aggregatedPublishLatencyQuantiles')
