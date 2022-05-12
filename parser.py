@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 from collections import defaultdict
+import argparse
 
 
 class ResultSchema:
@@ -34,19 +35,20 @@ class Result:
 
 
 class Plotter:
-    def __init__(self, file_blobs=[]):
+    def __init__(self, dir_path, file_blobs=[]):
         self.file_blobs = file_blobs
         self.results = []
         self.label_mapper = {
             'messageSize': 'messageSize',
             'aggregatedEndToEndLatencyAvg': 'aggregatedEndToEndLatencyAvg'
         }
+        self.dir_path = dir_path
 
     def fetch_results(self):
         for file_blob in self.file_blobs:
             result_blob = []
             for file in file_blob:
-                result_blob.append(Result(file))
+                result_blob.append(Result(self.dir_path+file))
             self.results.append(result_blob)
 
     def generate_title(self, labels):
@@ -166,9 +168,12 @@ class Plotter:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    dir_path = "./results/"
+
     #file_blobs = [['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json'], ['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json']]
     file_blobs = [['./sample.json'], ['./sample_2.json']]
 
-    plotter = Plotter(file_blobs=file_blobs)
+    plotter = Plotter(dir_path, file_blobs=file_blobs)
     plotter.fetch_results()
     plotter.multi_line_percentile_plotter('aggregatedPublishLatencyQuantiles')
