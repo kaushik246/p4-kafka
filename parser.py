@@ -137,8 +137,6 @@ class Plotter:
                 clean_pct_data = self.util_percentile(pct_data)
                 for key, val in clean_pct_data.items():
                     y_vals[i][key] = val
-        import pdb
-        pdb.set_trace()
         for i in range(len(self.file_blobs)):
             plt.plot(x_vals, y_vals[i], label="line "+str(i))
         plt.legend()
@@ -171,9 +169,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     dir_path = "./results/"
 
-    #file_blobs = [['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json'], ['./sample.json', './sample_2.json', './sample.json', './sample.json', './sample.json']]
-    file_blobs = [['./sample.json'], ['./sample_2.json']]
+    file_blobs_stack_bar = [['sample.json', 'sample_2.json', 'sample.json', 'sample.json', 'sample.json'], ['sample.json', 'sample_2.json', 'sample.json', 'sample.json', 'sample.json']]
+    file_blobs_box = [['sample.json'], ['sample_2.json']]
+    file_blobs_multi_line = [['sample.json'], ['sample_2.json']]
 
-    plotter = Plotter(dir_path, file_blobs=file_blobs)
-    plotter.fetch_results()
-    plotter.multi_line_percentile_plotter('aggregatedPublishLatencyQuantiles')
+
+    bar_graph = Plotter(dir_path, file_blobs=file_blobs_stack_bar)
+    bar_graph.fetch_results()
+    #bar_graph.stacked_bar_graph('messageSize', 'aggregatedPublishLatencyAvg')
+
+
+    box_graph = Plotter(dir_path, file_blobs=file_blobs_box)
+    box_graph.fetch_results()
+    #box_graph.box_plotter('messageSize', 'aggregatedEndToEndLatency')
+
+    multi_line = Plotter(dir_path, file_blobs=file_blobs_multi_line)
+    multi_line.fetch_results()
+    multi_line.multi_line_percentile_plotter('aggregatedPublishLatencyQuantiles')
