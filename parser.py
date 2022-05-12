@@ -79,7 +79,7 @@ class Plotter:
         ax.legend()
 
         fig.tight_layout()
-        plt.show()
+        plt.savefig(title+".jpg")
 
     def box_plotter(self, x_label, metric="aggregatedEndToEndLatency", title=""):
 
@@ -114,7 +114,7 @@ class Plotter:
 
         ax.set_ylabel(self.label_mapper.get(metric, metric))
         ax.set_title(title)
-        plt.show()
+        plt.savefig(title+".jpg")
 
     def util_percentile(self, pct_data):
         clean_pct_data = defaultdict(float)
@@ -140,7 +140,9 @@ class Plotter:
         for i in range(len(self.file_blobs)):
             plt.plot(x_vals, y_vals[i], label="line "+str(i))
         plt.legend()
-        plt.show()
+        plt.xlabel('Percentile')
+        plt.ylabel(y_label)
+        plt.savefig(title+".jpg")
 
     def violin_plot(self, x_label, y_label, title=""):
         pass
@@ -161,13 +163,9 @@ class Plotter:
             title = x_label + ' vs ' + y_label
         plt.title(title)
         plt.show()
-    '''
-
-
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    dir_path = "./results/"
+    dir_path = "./data/"
 
     file_blobs_stack_bar = [['sample.json', 'sample_2.json', 'sample.json', 'sample.json', 'sample.json'], ['sample.json', 'sample_2.json', 'sample.json', 'sample.json', 'sample.json']]
     file_blobs_box = [['sample.json'], ['sample_2.json']]
@@ -185,4 +183,6 @@ if __name__ == "__main__":
 
     multi_line = Plotter(dir_path, file_blobs=file_blobs_multi_line)
     multi_line.fetch_results()
-    multi_line.multi_line_percentile_plotter('aggregatedPublishLatencyQuantiles')
+    multi_line.multi_line_percentile_plotter('aggregatedPublishLatencyQuantiles') 
+    
+    '''
